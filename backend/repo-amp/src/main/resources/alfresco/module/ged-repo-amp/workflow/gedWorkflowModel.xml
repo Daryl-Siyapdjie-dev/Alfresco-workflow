@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="gedwf:gedWorkflowModel" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+
+    <description>Modele de metadonnees pour les taches des workflows GED (approbation de contrat, gestion de credit)</description>
+    <author>GED Alfresco</author>
+    <version>1.0</version>
+
+    <imports>
+        <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d" />
+        <import uri="http://www.alfresco.org/model/bpm/1.0" prefix="bpm" />
+        <import uri="http://www.alfresco.org/model/content/1.0" prefix="cm" />
+    </imports>
+
+    <namespaces>
+        <namespace uri="http://www.ged.com/model/workflow/1.0" prefix="gedwf" />
+    </namespaces>
+
+    <constraints>
+        <constraint name="gedwf:creditDecisionList" type="LIST">
+            <parameter name="allowedValues">
+                <list>
+                    <value>Approuve</value>
+                    <value>Rejete</value>
+                </list>
+            </parameter>
+        </constraint>
+    </constraints>
+
+    <types>
+        <!-- Type de base : porte la propriete "commentaire" commune a toutes les taches GED
+             (une propriete ne peut etre declaree qu'une seule fois dans le dictionnaire Alfresco,
+             d'ou ce parent commun plutot que de la repeter dans chaque type de tache). -->
+        <type name="gedwf:baseTask">
+            <title>Tache GED (base)</title>
+            <parent>bpm:workflowTask</parent>
+            <properties>
+                <property name="gedwf:comment">
+                    <title>Commentaire</title>
+                    <type>d:text</type>
+                </property>
+            </properties>
+        </type>
+
+        <type name="gedwf:approveContratTask">
+            <title>Approuver le contrat</title>
+            <parent>gedwf:baseTask</parent>
+        </type>
+
+        <!-- Taches du workflow "Gestion de Credit" -->
+
+        <type name="gedwf:submitCreditTask">
+            <title>Soumission du dossier de credit</title>
+            <parent>gedwf:baseTask</parent>
+        </type>
+
+        <type name="gedwf:verificationDocumentsTask">
+            <title>Verification des documents</title>
+            <parent>gedwf:baseTask</parent>
+        </type>
+
+        <type name="gedwf:analyseCreditTask">
+            <title>Analyse credit</title>
+            <parent>gedwf:baseTask</parent>
+        </type>
+
+        <type name="gedwf:validationDecisionTask">
+            <title>Validation et decision du responsable</title>
+            <parent>gedwf:baseTask</parent>
+            <properties>
+                <property name="gedwf:creditApprouve">
+                    <title>Decision</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                    <constraints>
+                        <constraint ref="gedwf:creditDecisionList" />
+                    </constraints>
+                </property>
+            </properties>
+        </type>
+
+        <type name="gedwf:signatureTask">
+            <title>Signature</title>
+            <parent>gedwf:baseTask</parent>
+        </type>
+    </types>
+
+    <aspects>
+        <!-- Applique automatiquement (etape "Archivage") aux documents du dossier une fois le credit signe -->
+        <aspect name="gedwf:archived">
+            <title>Dossier archive</title>
+            <properties>
+                <property name="gedwf:archiveDate">
+                    <title>Date d'archivage</title>
+                    <type>d:datetime</type>
+                </property>
+            </properties>
+        </aspect>
+    </aspects>
+
+</model>

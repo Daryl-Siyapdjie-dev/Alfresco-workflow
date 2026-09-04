@@ -1,0 +1,7 @@
+<webscript>
+    <shortname>GED Hello World Webscript</shortname>
+    <description>Retourne un message de bienvenue personnalise</description>
+    <url>/ged/hello?name={name}</url>
+    <authentication>user</authentication>
+    <format default="json">extension</format>
+</webscript>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Enregistrement du modele de contenu (types/aspects) et du modele de taches de workflow -->
+    <bean id="ged-repo-amp.dictionaryBootstrap" parent="dictionaryModelBootstrap" depends-on="dictionaryBootstrap">
+        <property name="models">
+            <list>
+                <value>alfresco/module/ged-repo-amp/model/contractModel.xml</value>
+                <value>alfresco/module/ged-repo-amp/workflow/gedWorkflowModel.xml</value>
+                <value>alfresco/module/ged-repo-amp/model/siriyf-model.xml</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Behavior Java : renseigne automatiquement la date de signature a la creation d'un ged:contrat -->
+    <bean id="ged-repo-amp.contratBehaviour" class="com.ged.alfresco.repo.behavior.ContratBehaviour">
+        <property name="policyComponent" ref="policyComponent" />
+        <property name="nodeService" ref="nodeService" />
+    </bean>
+
+    <!-- Deploiement des workflows BPMN (approbation de contrat, gestion de credit).
+         redeploy=true : force le redeploiement d'une nouvelle version a chaque demarrage si le
+         contenu du fichier a change. Avec redeploy=false, Alfresco ne redeploie JAMAIS une nouvelle
+         version une fois le premier deploiement fait (meme si le .bpmn20.xml est modifie et l'image
+         reconstruite) : les instances de workflow demarrees restent alors bloquees sur l'ancienne
+         version, silencieusement, ce qui a cause des heures de debogage ici. -->
+
+    <bean id="ged-repo-amp.workflowBootstrap" parent="workflowDeployer">
+        <property name="workflowDefinitions">
+            <list>
+                <props>
+                    <prop key="engineId">activiti</prop>
+                    <prop key="location">alfresco/module/ged-repo-amp/workflow/ged-approval.bpmn20.xml</prop>
+                    <prop key="mimetype">text/xml</prop>
+                    <prop key="redeploy">true</prop>
+                </props>
+                <props>
+                    <prop key="engineId">activiti</prop>
+                    <prop key="location">alfresco/module/ged-repo-amp/workflow/ged-credit-workflow.bpmn20.xml</prop>
+                    <prop key="mimetype">text/xml</prop>
+                    <prop key="redeploy">true</prop>
+                </props>
+                <props>
+                    <prop key="engineId">activiti</prop>
+                    <prop key="location">alfresco/module/ged-repo-amp/workflow/siriyf-workflow.bpmn20.xml</prop>
+                    <prop key="mimetype">text/xml</prop>
+                    <prop key="redeploy">true</prop>
+                </props>
+            </list>
+        </property>
+    </bean>
+
+    <!-- ArchivageDelegate et PromoteCreditDecisionListener sont references directement par
+         activiti:class dans le BPMN (pas de bean Spring necessaire, cf. leur Javadoc). -->
+
+    <!-- Registration of Java Delegate for SIRYF Mock Transmission -->
+    <bean id="siriyfTransmissionAction" class="com.asf.guinee.SiriyfTransmissionAction">
+        <property name="nodeService" ref="nodeService"/>
+    </bean>
+
+</beans>

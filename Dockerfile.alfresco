@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:1
+
+# Build du module d'extension repository (content model, behaviors, web scripts, workflow)
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY backend/repo-amp/pom.xml ./pom.xml
+COPY backend/repo-amp/src ./src
+# Cache mount : conserve ~/.m2 entre les builds pour eviter de re-telecharger
+# tout l'arbre de dependances Alfresco (tres volumineux) a chaque modification.
+RUN --mount=type=cache,target=/root/.m2 mvn -q -B -DskipTests package
+
+# Image finale : Alfresco Content Repository officielle + notre module deploye en "simple module" JAR
+FROM docker.io/alfresco/alfresco-content-repository-community:26.1.0
+COPY --from=build /app/target/ged-repo-amp.jar /usr/local/tomcat/webapps/alfresco/WEB-INF/lib/ged-repo-amp.jar

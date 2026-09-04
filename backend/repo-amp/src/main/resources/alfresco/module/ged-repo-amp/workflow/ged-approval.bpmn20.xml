@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:activiti="http://activiti.org/bpmn"
+             targetNamespace="http://www.ged.com/workflow">
+
+    <process id="gedApproval" name="GED - Approbation de contrat">
+
+        <startEvent id="start" activiti:formKey="gedwf:submitContratTask" />
+
+        <sequenceFlow sourceRef="start" targetRef="approveTask" />
+
+        <userTask id="approveTask" name="Approuver le contrat"
+                  activiti:assignee="${initiator}"
+                  activiti:formKey="gedwf:approveContratTask">
+            <extensionElements>
+                <activiti:taskListener event="create" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener" />
+            </extensionElements>
+        </userTask>
+
+        <sequenceFlow sourceRef="approveTask" targetRef="decisionGateway" />
+
+        <exclusiveGateway id="decisionGateway" />
+
+        <sequenceFlow sourceRef="decisionGateway" targetRef="approvedEnd">
+            <conditionExpression xsi:type="tFormalExpression"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${gedwf_approved == true}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow sourceRef="decisionGateway" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${gedwf_approved == false}</conditionExpression>
+        </sequenceFlow>
+
+        <endEvent id="approvedEnd" name="Contrat approuve" />
+        <endEvent id="rejectedEnd" name="Contrat rejete" />
+
+    </process>
+
+</definitions>

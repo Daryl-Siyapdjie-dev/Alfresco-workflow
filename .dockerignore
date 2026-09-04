@@ -1,0 +1,4 @@
+**/.git
+**/node_modules
+backend/repo-amp/target
+frontend/alfresco-content-app/.angular

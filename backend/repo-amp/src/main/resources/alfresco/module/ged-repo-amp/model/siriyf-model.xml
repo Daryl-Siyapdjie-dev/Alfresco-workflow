@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="siriyf:model" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+
+    <description>Siriyf Content Model for ASF Guinee</description>
+    <author>Antigravity</author>
+    <version>1.0</version>
+
+    <imports>
+        <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d" />
+        <import uri="http://www.alfresco.org/model/content/1.0" prefix="cm" />
+    </imports>
+
+    <namespaces>
+        <namespace uri="http://www.asf.guinee.com/model/siriyf/1.0" prefix="siriyf" />
+    </namespaces>
+
+    <constraints>
+        <constraint name="siriyf:statusList" type="LIST">
+            <parameter name="allowedValues">
+                <list>
+                    <value>Nouveau</value>
+                    <value>En attente de contrôle</value>
+                    <value>En attente de validation</value>
+                    <value>Validé</value>
+                    <value>En attente de transmission</value>
+                    <value>Archivé</value>
+                    <value>Erreur de transmission</value>
+                </list>
+            </parameter>
+        </constraint>
+        <constraint name="siriyf:typeDocumentList" type="LIST">
+            <parameter name="allowedValues">
+                <list>
+                    <value>SIGIMF</value>
+                    <value>PRUD</value>
+                    <value>IGEC</value>
+                    <value>FINS</value>
+                    <value>BALANCE</value>
+                </list>
+            </parameter>
+        </constraint>
+    </constraints>
+
+    <types>
+        <type name="siriyf:declaration">
+            <title>Declaration Reglementaire</title>
+            <parent>cm:content</parent>
+            <properties>
+                <property name="siriyf:statut">
+                    <title>Statut du dossier</title>
+                    <type>d:text</type>
+                    <default>Nouveau</default>
+                    <constraints>
+                        <constraint ref="siriyf:statusList" />
+                    </constraints>
+                </property>
+                <property name="siriyf:typeDocument">
+                    <title>Type de Document</title>
+                    <type>d:text</type>
+                    <constraints>
+                        <constraint ref="siriyf:typeDocumentList" />
+                    </constraints>
+                </property>
+            </properties>
+        </type>
+    </types>
+
+</model>

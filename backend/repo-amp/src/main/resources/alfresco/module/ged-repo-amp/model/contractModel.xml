@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="ged:contractModel" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+
+    <description>Modele de metadonnees GED : documents de type Contrat</description>
+    <author>GED Alfresco</author>
+    <version>1.0</version>
+
+    <imports>
+        <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d" />
+        <import uri="http://www.alfresco.org/model/content/1.0" prefix="cm" />
+    </imports>
+
+    <namespaces>
+        <namespace uri="http://www.ged.com/model/content/1.0" prefix="ged" />
+    </namespaces>
+
+    <constraints>
+        <constraint name="ged:statutContratList" type="LIST">
+            <parameter name="allowedValues">
+                <list>
+                    <value>Brouillon</value>
+                    <value>EnApprobation</value>
+                    <value>Approuve</value>
+                    <value>Rejete</value>
+                </list>
+            </parameter>
+        </constraint>
+    </constraints>
+
+    <types>
+        <type name="ged:contrat">
+            <title>Contrat</title>
+            <parent>cm:content</parent>
+            <properties>
+                <property name="ged:clientName">
+                    <title>Nom du client</title>
+                    <type>d:text</type>
+                    <mandatory>true</mandatory>
+                </property>
+                <property name="ged:montant">
+                    <title>Montant du contrat</title>
+                    <type>d:float</type>
+                </property>
+                <property name="ged:dateSignature">
+                    <title>Date de signature</title>
+                    <type>d:date</type>
+                </property>
+                <property name="ged:statut">
+                    <title>Statut</title>
+                    <type>d:text</type>
+                    <default>Brouillon</default>
+                    <constraints>
+                        <constraint ref="ged:statutContratList" />
+                    </constraints>
+                </property>
+            </properties>
+        </type>
+    </types>
+
+</model>

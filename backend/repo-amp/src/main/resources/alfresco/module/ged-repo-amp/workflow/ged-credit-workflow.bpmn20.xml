@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:activiti="http://activiti.org/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://www.ged.com/workflow/credit">
+
+    <!--
+        Workflow de Gestion de Credit :
+        Soumission dossier -> Verification documents -> Analyse credit
+        -> Validation responsable / Decision -> (rejet: retour a Verification documents)
+        -> Signature -> Archivage (automatique) -> Fin
+
+        Roles (groupes Alfresco a creer, cf. backend/repo-amp/README.md) :
+        GROUP_GED_VERIFICATEURS, GROUP_GED_ANALYSTES_CREDIT,
+        GROUP_GED_RESPONSABLES_CREDIT, GROUP_GED_SIGNATAIRES
+    -->
+    <process id="gedCreditWorkflow" name="GED - Gestion de Credit">
+
+        <startEvent id="start" activiti:formKey="gedwf:submitCreditTask" />
+        <sequenceFlow sourceRef="start" targetRef="verificationDocuments" />
+
+        <userTask id="verificationDocuments" name="Verification documents"
+                  activiti:candidateGroups="GROUP_GED_VERIFICATEURS"
+                  activiti:formKey="gedwf:verificationDocumentsTask" />
+        <sequenceFlow sourceRef="verificationDocuments" targetRef="analyseCredit" />
+
+        <userTask id="analyseCredit" name="Analyse credit"
+                  activiti:candidateGroups="GROUP_GED_ANALYSTES_CREDIT"
+                  activiti:formKey="gedwf:analyseCreditTask" />
+        <sequenceFlow sourceRef="analyseCredit" targetRef="validationDecision" />
+
+        <userTask id="validationDecision" name="Validation et decision responsable"
+                  activiti:candidateGroups="GROUP_GED_RESPONSABLES_CREDIT"
+                  activiti:formKey="gedwf:validationDecisionTask">
+            <extensionElements>
+                <activiti:taskListener event="complete" class="com.ged.alfresco.repo.workflow.PromoteCreditDecisionListener" />
+            </extensionElements>
+        </userTask>
+        <sequenceFlow sourceRef="validationDecision" targetRef="decisionGateway" />
+
+        <exclusiveGateway id="decisionGateway" />
+
+        <sequenceFlow sourceRef="decisionGateway" targetRef="signature">
+            <conditionExpression xsi:type="tFormalExpression">${gedwf_creditApprouve == 'Approuve'}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow sourceRef="decisionGateway" targetRef="verificationDocuments">
+            <conditionExpression xsi:type="tFormalExpression">${gedwf_creditApprouve == 'Rejete'}</conditionExpression>
+        </sequenceFlow>
+
+        <userTask id="signature" name="Signature"
+                  activiti:candidateGroups="GROUP_GED_SIGNATAIRES"
+                  activiti:formKey="gedwf:signatureTask" />
+        <sequenceFlow sourceRef="signature" targetRef="archivage" />
+
+        <serviceTask id="archivage" name="Archivage automatique"
+                     activiti:class="com.ged.alfresco.repo.workflow.ArchivageDelegate" />
+        <sequenceFlow sourceRef="archivage" targetRef="end" />
+
+        <endEvent id="end" name="Dossier archive" />
+
+    </process>
+
+</definitions>

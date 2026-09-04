@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:activiti="http://activiti.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             typeLanguage="http://www.w3.org/2001/XMLSchema"
+             expressionLanguage="http://www.w3.org/1999/XPath"
+             targetNamespace="http://www.alfresco.org">
+
+    <process id="siriyfValidationProcess" name="Processus de validation et transmission SIRYF" isExecutable="true">
+
+        <startEvent id="startEvent" name="Start" activiti:formKey="wf:submitAdhocTask" />
+
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="controleTask" />
+
+        <!-- 1. Tache de Controle -->
+        <userTask id="controleTask" name="Contrôle de la déclaration" activiti:candidateGroups="GROUP_CONTROLEURS" activiti:formKey="wf:activitiReviewTask">
+            <extensionElements>
+                <activiti:taskListener event="create" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="runAs"><activiti:string>admin</activiti:string></activiti:field>
+                    <activiti:field name="script">
+                        <activiti:string>
+                            if (typeof bpm_package != 'undefined' &amp;&amp; bpm_package != null) {
+                                for (var i = 0; i &lt; bpm_package.children.length; i++) {
+                                    var doc = bpm_package.children[i];
+                                    if (doc.type == "{http://www.asf.guinee.com/model/siriyf/1.0}declaration") {
+                                        doc.properties["siriyf:statut"] = "En attente de contrôle";
+                                        doc.save();
+                                    }
+                                }
+                            }
+                        </activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+                <activiti:taskListener event="complete" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="runAs"><activiti:string>admin</activiti:string></activiti:field>
+                    <activiti:field name="script">
+                        <activiti:string>
+                            if(task.getVariableLocal('wf_reviewOutcome') != null) {
+                                execution.setVariable('wf_reviewOutcome', task.getVariableLocal('wf_reviewOutcome'));
+                            }
+                        </activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+            </extensionElements>
+        </userTask>
+
+        <sequenceFlow id="flow2" sourceRef="controleTask" targetRef="controleGateway" />
+
+        <exclusiveGateway id="controleGateway" name="Decision Controle" />
+
+        <sequenceFlow id="flowControleRejete" sourceRef="controleGateway" targetRef="endEventRejete">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${wf_reviewOutcome == 'Reject'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowControleApprouve" sourceRef="controleGateway" targetRef="validationTask">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${wf_reviewOutcome == 'Approve'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <!-- 2. Tache de Validation -->
+        <userTask id="validationTask" name="Validation métier de la déclaration" activiti:candidateGroups="GROUP_VALIDATEURS" activiti:formKey="wf:activitiReviewTask">
+            <extensionElements>
+                <activiti:taskListener event="create" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="runAs"><activiti:string>admin</activiti:string></activiti:field>
+                    <activiti:field name="script">
+                        <activiti:string>
+                            if (typeof bpm_package != 'undefined' &amp;&amp; bpm_package != null) {
+                                for (var i = 0; i &lt; bpm_package.children.length; i++) {
+                                    var doc = bpm_package.children[i];
+                                    if (doc.type == "{http://www.asf.guinee.com/model/siriyf/1.0}declaration") {
+                                        doc.properties["siriyf:statut"] = "En attente de validation";
+                                        doc.save();
+                                    }
+                                }
+                            }
+                        </activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+                <activiti:taskListener event="complete" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="runAs"><activiti:string>admin</activiti:string></activiti:field>
+                    <activiti:field name="script">
+                        <activiti:string>
+                            if(task.getVariableLocal('wf_reviewOutcome') != null) {
+                                execution.setVariable('wf_reviewOutcome', task.getVariableLocal('wf_reviewOutcome'));
+                            }
+                        </activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+            </extensionElements>
+        </userTask>
+
+        <sequenceFlow id="flow3" sourceRef="validationTask" targetRef="validationGateway" />
+
+        <exclusiveGateway id="validationGateway" name="Decision Validation" />
+
+        <sequenceFlow id="flowValidationRejete" sourceRef="validationGateway" targetRef="endEventRejete">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${wf_reviewOutcome == 'Reject'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowValidationApprouve" sourceRef="validationGateway" targetRef="transmissionTask">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${wf_reviewOutcome == 'Approve'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <!-- 3. Tache de Transmission -->
+        <userTask id="transmissionTask" name="Transmission vers SIRYF" activiti:candidateGroups="GROUP_TRANSMETTEURS" activiti:formKey="wf:activitiReviewTask">
+            <extensionElements>
+                <activiti:taskListener event="create" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="runAs"><activiti:string>admin</activiti:string></activiti:field>
+                    <activiti:field name="script">
+                        <activiti:string>
+                            if (typeof bpm_package != 'undefined' &amp;&amp; bpm_package != null) {
+                                for (var i = 0; i &lt; bpm_package.children.length; i++) {
+                                    var doc = bpm_package.children[i];
+                                    if (doc.type == "{http://www.asf.guinee.com/model/siriyf/1.0}declaration") {
+                                        doc.properties["siriyf:statut"] = "Validé";
+                                        doc.save();
+                                    }
+                                }
+                            }
+                        </activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+                <activiti:taskListener event="complete" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="runAs"><activiti:string>admin</activiti:string></activiti:field>
+                    <activiti:field name="script">
+                        <activiti:string>
+                            if(task.getVariableLocal('wf_reviewOutcome') != null) {
+                                execution.setVariable('wf_reviewOutcome', task.getVariableLocal('wf_reviewOutcome'));
+                            }
+                        </activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+            </extensionElements>
+        </userTask>
+
+        <sequenceFlow id="flow4" sourceRef="transmissionTask" targetRef="transmissionGateway" />
+
+        <exclusiveGateway id="transmissionGateway" name="Decision Transmission" />
+
+        <sequenceFlow id="flowTransmissionRejete" sourceRef="transmissionGateway" targetRef="endEventRejete">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${wf_reviewOutcome == 'Reject'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowTransmissionApprouve" sourceRef="transmissionGateway" targetRef="serviceTaskTransmission">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${wf_reviewOutcome == 'Approve'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <!-- 4. Tache Automatique de Transmission -->
+        <serviceTask id="serviceTaskTransmission" name="API SIRYF (Mock)" activiti:delegateExpression="${siriyfTransmissionAction}" />
+
+        <sequenceFlow id="flow5" sourceRef="serviceTaskTransmission" targetRef="endEventAccepte" />
+
+        <endEvent id="endEventAccepte" name="Processus Terminé avec Succès" />
+        <endEvent id="endEventRejete" name="Processus Rejeté" />
+
+    </process>
+
+</definitions>

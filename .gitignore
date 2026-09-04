@@ -1,0 +1,11 @@
+.DS_Store
+target/
+*.jar
+*.war
+*.class
+.idea/
+*.iml
+.vscode/
+node_modules/
+dist/
+.claude/
