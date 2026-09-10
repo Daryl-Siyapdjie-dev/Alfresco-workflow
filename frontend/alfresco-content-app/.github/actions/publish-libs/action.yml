@@ -1,0 +1,60 @@
+name: "Publish ACA libs to NPM and GH registry"
+description: "Publish ACA libs to NPM and GH registry"
+
+inputs:
+  branch_name:
+    description: 'Name of the branch the workflow runs on'
+    required: true
+  github_token:
+    description: 'Github token'
+    required: true
+  npm_tag:
+    description: 'NPM tag'
+    required: true
+  dry-run:
+    description: dry run flag
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: ./.github/actions/update-library-versions
+      name: Update Library Versions
+      with:
+        branch_name: ${{ env.BRANCH_NAME }}
+        dry-run: ${{ inputs.dry-run }}
+
+    - name: Build Libraries
+      shell: bash
+      run: |
+        npm ci
+        npm run ci:build:many
+
+    - uses: actions/setup-node@v6
+      name: setup GH registry
+      with:
+        node-version-file: '.nvmrc'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@alfresco'
+
+    - name: Publish to GH registry
+      shell: bash
+      run: ${{ github.action_path }}/npm-publish.sh "$TAG" "$DRY_RUN"
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.github_token }}
+        TAG: ${{ inputs.npm_tag }}
+        DRY_RUN: ${{ inputs.dry-run }}
+
+    - uses: actions/setup-node@v6
+      name: setup NPM registry
+      with:
+        node-version-file: '.nvmrc'
+        registry-url: 'https://registry.npmjs.org'
+        scope: '@alfresco'
+
+    - name: Publish to NPM registry
+      shell: bash
+      run: ${{ github.action_path }}/npm-publish.sh "$TAG" "$DRY_RUN"
+      env:
+        TAG: ${{ inputs.npm_tag }}
+        DRY_RUN: ${{ inputs.dry-run }}

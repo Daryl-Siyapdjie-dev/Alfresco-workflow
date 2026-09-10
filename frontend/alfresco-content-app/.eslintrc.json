@@ -1,0 +1,352 @@
+{
+  "root": true,
+  "ignorePatterns": ["projects/**/*"],
+  "plugins": ["@nx"],
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "plugins": ["@alfresco/eslint-angular"],
+      "extends": ["plugin:@angular-eslint/template/process-inline-templates"],
+      "excludedFiles": ["*.spec.ts"],
+      "rules": {
+        "@alfresco/eslint-angular/use-none-component-view-encapsulation": "error"
+      }
+    },
+    {
+      "files": ["*.ts"],
+      "parserOptions": {
+        "createDefaultProgram": true
+      },
+      "extends": ["plugin:@nx/typescript", "plugin:@nx/angular", "plugin:@cspell/recommended"],
+      "plugins": [
+        "rxjs",
+        "unicorn",
+        "prettier",
+        "ban",
+        "@cspell",
+        "license-header",
+        "eslint-plugin-import",
+        "@angular-eslint/eslint-plugin",
+        "eslint-plugin-unicorn",
+        "eslint-plugin-rxjs",
+        "@typescript-eslint"
+      ],
+      "rules": {
+        "ban/ban": [
+          "error",
+          {
+            "name": "eval",
+            "message": "Calls to eval is not allowed."
+          },
+          {
+            "name": "fdescribe",
+            "message": "Calls to fdescribe is not allowed"
+          },
+          {
+            "name": "fit",
+            "message": "Calls to fit is not allowed"
+          },
+          {
+            "name": "xit",
+            "message": "Calls to xit is not allowed"
+          },
+          {
+            "name": "xdescribe",
+            "message": "Calls to xdescribe is not allowed"
+          }
+        ],
+        "license-header/header": [
+          "error",
+          [
+            "/*!",
+            " * Copyright © 2005-2025 Hyland Software, Inc. and its affiliates. All rights reserved.",
+            " *",
+            " * Alfresco Example Content Application",
+            " *",
+            " * This file is part of the Alfresco Example Content Application.",
+            " * If the software was purchased under a paid Alfresco license, the terms of",
+            " * the paid license agreement will prevail. Otherwise, the software is",
+            " * provided under the following open source license terms:",
+            " *",
+            " * The Alfresco Example Content Application is free software: you can redistribute it and/or modify",
+            " * it under the terms of the GNU Lesser General Public License as published by",
+            " * the Free Software Foundation, either version 3 of the License, or",
+            " * (at your option) any later version.",
+            " *",
+            " * The Alfresco Example Content Application is distributed in the hope that it will be useful,",
+            " * but WITHOUT ANY WARRANTY; without even the implied warranty of",
+            " * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the",
+            " * GNU Lesser General Public License for more details.",
+            " *",
+            " * You should have received a copy of the GNU Lesser General Public License",
+            " * from Hyland Software. If not, see <http://www.gnu.org/licenses/>.",
+            " */"
+          ]
+        ],
+        "prettier/prettier": "error",
+        "no-shadow": "off",
+        "@typescript-eslint/no-shadow": "error",
+        "@angular-eslint/component-selector": [
+          "error",
+          {
+            "type": "element",
+            "prefix": ["app", "aca", "adf"],
+            "style": "kebab-case"
+          }
+        ],
+        "@angular-eslint/directive-selector": [
+          "error",
+          {
+            "type": "attribute",
+            "prefix": "aca",
+            "style": "camelCase"
+          }
+        ],
+        "@angular-eslint/component-class-suffix": "error",
+        "@angular-eslint/directive-class-suffix": "error",
+        "@angular-eslint/no-conflicting-lifecycle": "error",
+        "@typescript-eslint/no-floating-promises": "warn",
+        "@typescript-eslint/no-misused-promises": "warn",
+        "@typescript-eslint/default-param-last": "warn",
+        "@angular-eslint/no-input-rename": "error",
+        "@angular-eslint/no-output-native": "error",
+        "@angular-eslint/no-output-on-prefix": "error",
+        "@angular-eslint/no-output-rename": "error",
+        "@angular-eslint/no-outputs-metadata-property": "error",
+        "@angular-eslint/use-lifecycle-interface": "error",
+        "@angular-eslint/use-pipe-transform-interface": "error",
+        "@typescript-eslint/prefer-optional-chain": "error",
+        "@typescript-eslint/no-misused-new": "error",
+        "@typescript-eslint/no-non-null-assertion": "error",
+        "@typescript-eslint/prefer-function-type": "error",
+        "@typescript-eslint/triple-slash-reference": "error",
+        "@typescript-eslint/unified-signatures": "error",
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": "error",
+        "@typescript-eslint/consistent-type-definitions": "error",
+        "@typescript-eslint/dot-notation": "off",
+        "@typescript-eslint/member-ordering": "off",
+        "@typescript-eslint/no-empty-function": "off",
+        "@typescript-eslint/no-empty-interface": "error",
+        "@typescript-eslint/no-unused-expressions": "error",
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/ban-types": "error",
+        "@typescript-eslint/explicit-member-accessibility": [
+          "off",
+          {
+            "accessibility": "explicit"
+          }
+        ],
+        "@typescript-eslint/member-delimiter-style": [
+          "off",
+          {
+            "multiline": {
+              "delimiter": "none",
+              "requireLast": true
+            },
+            "singleline": {
+              "delimiter": "semi",
+              "requireLast": false
+            }
+          }
+        ],
+        "@typescript-eslint/semi": ["error", "always"],
+        "@typescript-eslint/naming-convention": [
+          "error",
+          {
+            "selector": "enum",
+            "format": ["PascalCase"]
+          }
+        ],
+        "@typescript-eslint/no-inferrable-types": [
+          "error",
+          {
+            "ignoreParameters": true
+          }
+        ],
+        "@typescript-eslint/quotes": [
+          "error",
+          "single",
+          {
+            "avoidEscape": true,
+            "allowTemplateLiterals": true
+          }
+        ],
+        "@typescript-eslint/type-annotation-spacing": "error",
+        "arrow-parents": ["off", "always"],
+        "brace-style": [
+          "error",
+          "1tbs",
+          {
+            "allowSingleLine": true
+          }
+        ],
+        "constructor-super": "error",
+        "curly": "error",
+        "dot-notation": "off",
+        "eol-last": "error",
+        "eqeqeq": ["error", "smart"],
+        "guard-for-in": "error",
+        "id-blacklist": "off",
+        "id-match": "off",
+        "id-denylist": "off",
+        "import/no-deprecated": "error",
+        "linebreak-style": "off",
+        "new-parens": "off",
+        "newline-per-chained-call": "off",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+        "prefer-promise-reject-errors": "error",
+        "import/order": "off",
+        "max-len": [
+          "error",
+          {
+            "code": 180
+          }
+        ],
+        "no-duplicate-imports": "error",
+        "no-extra-semi": "off",
+        "no-empty": "off",
+        "no-empty-function": "off",
+        "no-irregular-whitespace": "error",
+        "no-return-await": "error",
+        "no-underscore-dangle": "off",
+        "no-useless-escape": "off",
+        "no-prototype-builtins": "error",
+        "no-async-promise-executor": "warn",
+        "no-unsafe-optional-chaining": "warn",
+        "no-bitwise": "error",
+        "no-caller": "error",
+        "no-global-assign": "error",
+        "no-cond-assign": "error",
+        "no-constant-binary-expression": "error",
+        "no-useless-rename": "error",
+        "no-console": [
+          "error",
+          {
+            "allow": [
+              "warn",
+              "dir",
+              "timeLog",
+              "assert",
+              "clear",
+              "count",
+              "countReset",
+              "group",
+              "groupEnd",
+              "table",
+              "dirxml",
+              "error",
+              "groupCollapsed",
+              "Console",
+              "profile",
+              "profileEnd",
+              "timeStamp",
+              "context"
+            ]
+          }
+        ],
+        "no-case-declarations": "error",
+        "no-debugger": "error",
+        "no-constant-condition": "error",
+        "no-eval": "error",
+        "no-regex-spaces": "error",
+        "no-extra-boolean-cast": "error",
+        "no-fallthrough": "error",
+        "no-multiple-empty-lines": "error",
+        "no-new-wrappers": "error",
+        "no-restricted-imports": ["error", "rxjs/Rx"],
+        "no-self-assign": "error",
+        "no-throw-literal": "error",
+        "no-trailing-spaces": "error",
+        "no-undef-init": "error",
+        "no-unused-labels": "error",
+        "no-var": "error",
+        "prefer-const": "error",
+        "quote-props": "off",
+        "quotes": "off",
+        "radix": "error",
+        "rxjs/no-create": "error",
+        "rxjs/no-subject-unsubscribe": "error",
+        "rxjs/no-subject-value": "error",
+        "rxjs/no-unsafe-takeuntil": "error",
+        "rxjs/ban-operators": "error",
+        "rxjs/no-ignored-subscribe": "error",
+        "rxjs/no-unsafe-catch": [
+          "error",
+          {
+            "observable": "action(s|\\$)?"
+          }
+        ],
+        "rxjs/no-unsafe-switchmap": [
+          "error",
+          {
+            "disallow": ["add", "create", "delete", "post", "put", "remove", "set", "update"],
+            "observable": "action(s|\\$)?"
+          }
+        ],
+        "semi": "error",
+        "use-isnan": "error",
+        "spaced-comment": [
+          "error",
+          "always",
+          {
+            "markers": ["/"],
+            "exceptions": ["!", "*"]
+          }
+        ],
+        "space-before-function-paren": "off",
+        "space-in-parens": ["off", "never"],
+        "unicorn/filename-case": "error",
+        "@typescript-eslint/no-extra-semi": "error",
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": ":matches(Literal[value=/ng-reflect-/], TemplateElement[value.cooked=/ng-reflect-/])",
+            "message": "*ng-reflect-* attributes should not be used. Consider alternatives for proper selectors."
+          }
+        ],
+        "@angular-eslint/prefer-inject": "error",
+        "@typescript-eslint/prefer-readonly": "error"
+      }
+    },
+    {
+      "files": ["*.js"],
+      "extends": ["plugin:@nx/javascript"],
+      "rules": {
+        "@typescript-eslint/no-extra-semi": "error",
+        "no-extra-semi": "off"
+      }
+    },
+    {
+      "files": ["*.html"],
+      "extends": ["plugin:@nx/angular-template", "plugin:@angular-eslint/template/accessibility"],
+      "parser": "@angular-eslint/template-parser",
+      "rules": {
+        "@angular-eslint/template/no-negated-async": "off",
+        "@angular-eslint/template/no-positive-tabindex": "error",
+        "@angular-eslint/template/eqeqeq": "error",
+        "@angular-eslint/template/no-call-expression": "off",
+        "@angular-eslint/template/prefer-self-closing-tags": "error"
+      }
+    },
+    {
+      "files": ["*.spec.ts"],
+      "plugins": ["@alfresco/eslint-angular"],
+      "rules": {
+        "@typescript-eslint/no-floating-promises": "warn",
+        "@typescript-eslint/no-misused-promises": "warn",
+        "max-lines": "off",
+        "@alfresco/eslint-angular/no-angular-material-selectors": "error"
+      }
+    },
+    {
+      "files": ["*.json"],
+      "parser": "jsonc-eslint-parser",
+      "rules": {
+        "comma-dangle": ["error", "never"]
+      }
+    }
+  ]
+}

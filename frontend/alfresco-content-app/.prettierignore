@@ -1,0 +1,7 @@
+node_modules
+src/assets/i18n
+/angular.json
+docs/**/*.md
+
+/.nx/cache
+/.nx/workspace-data

@@ -1,0 +1,28 @@
+name: "Update Library Versions"
+description: "Updates ACA libraries according to the root Version"
+
+inputs:
+  branch_name:
+    description: 'Name of the branch the workflow runs on'
+    required: true
+  dry-run:
+    description: dry run flag
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update Versions
+      shell: bash
+      env:
+        BRANCH_NAME: ${{ inputs.branch_name }}
+      run: |
+        VERSION_IN_PACKAGE_JSON=$(jq -cr '.version' < package.json)
+
+        if [[ $BRANCH_NAME =~ ^master.*?$ ]] || [[ "$BRANCH_NAME" == release/* ]] ; then
+          NEW_LIBRARY_VERSION="$VERSION_IN_PACKAGE_JSON"
+        else
+          NEW_LIBRARY_VERSION="${VERSION_IN_PACKAGE_JSON}-${{ github.run_id }}"
+        fi
+
+        ${{ github.action_path }}/update-lib-versions.sh "$NEW_LIBRARY_VERSION" "${{ inputs.dry-run }}"

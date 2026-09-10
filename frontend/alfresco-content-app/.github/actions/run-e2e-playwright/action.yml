@@ -1,0 +1,50 @@
+name: "Run e2e Playwright"
+description: "Run e2e Playwright"
+
+inputs:
+  options:
+    description: 'Options'
+    required: true
+  test-runner:
+    description: 'Test runner'
+    required: false
+    default: 'Playwright'
+  artifact-name:
+    description: Name of the artifact cache
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Set PLAYWRIGHT_E2E_HOST
+      if: inputs.url != ''
+      shell: bash
+      run: |
+        # Construct the full URL with /aca path (without #/ as tests add that)
+        if [[ "${{ inputs.url }}" != *"/aca"* ]]; then
+          echo "PLAYWRIGHT_E2E_HOST=${{ inputs.url }}/aca" >> $GITHUB_ENV
+        else
+          echo "PLAYWRIGHT_E2E_HOST=${{ inputs.url }}" >> $GITHUB_ENV
+        fi
+
+    - name: Setup and run with options
+      shell: bash
+      env:
+        OPTIONS: ${{ inputs.options }}
+        PLAYWRIGHT_BROWSER: ${{ env.PLAYWRIGHT_BROWSER || 'chromium' }}
+      run: |
+        # Only start local server if using localhost
+        if [[ "${PLAYWRIGHT_E2E_HOST}" == "http://localhost"* ]]; then
+          npm start > /dev/null &
+        fi
+
+        printf "Waiting for the application to be ready..."
+        while ! curl -sf ${PLAYWRIGHT_E2E_HOST} > /dev/null; do
+          printf "."
+          sleep 1
+        done
+        printf "\nApplication is ready.\n"
+
+        echo "Running playwright tests with options $OPTIONS on browser ${PLAYWRIGHT_BROWSER}"
+        E2E_TARGET=$OPTIONS npm run ci:e2e

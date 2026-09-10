@@ -1,0 +1,39 @@
+name: "Publish GitHub Tag"
+description: "Publish GitHub Tag"
+
+inputs:
+  github_token:
+    description: 'Github token'
+    required: true
+  branch_name:
+    description: 'Name of the branch the workflow runs on'
+    required: true
+  dry-run:
+    description: dry run flag
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: publish tag
+      shell: bash
+      env:
+        BRANCH_NAME: ${{ inputs.branch_name }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        if [[  "$BRANCH_NAME" == "master" ]] || [[ "$BRANCH_NAME" == release/* ]]; then
+          VERSION=$(jq -cr '.version' < package.json)
+          echo "git tag -a ${VERSION} -m ${VERSION}"
+
+          if [ $(git tag -l "$VERSION") ]; then
+            echo "Tag \"$VERSION\" already exists. Skipping."
+          else
+              if [[ "${{ inputs.dry-run }}" != "true" ]]; then
+                git tag -a ${VERSION} -m "${VERSION} [ci skip] "
+                git remote rm origin
+                GITHUB_REPO=https://$GITHUB_TOKEN:x-oauth-basic@github.com/Alfresco/alfresco-content-app.git
+                git remote add origin $GITHUB_REPO
+                git push origin --tags
+              fi
+          fi
+        fi

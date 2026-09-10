@@ -1,0 +1,11 @@
+name: "Before install and variables setup"
+description: "Before install and variables setup"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: ./.github/actions/setup
+
+    - name: ADF linking
+      if: ${{ github.event_name == 'pull_request'}}
+      uses: ./.github/actions/adf-linking

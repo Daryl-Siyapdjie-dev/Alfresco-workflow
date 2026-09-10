@@ -1,0 +1,72 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: "sunday"
+    open-pull-requests-limit: 5
+    target-branch: develop
+    ignore:
+      - dependency-name: "@alfresco/*"
+      - dependency-name: "@angular/*"
+      - dependency-name: "@angular-devkit/*"
+      - dependency-name: "@ngrx/*"
+      - dependency-name: "@nrwl/*"
+      - dependency-name: "pdfjs-dist"
+      - dependency-name: "@types/*"
+      - dependency-name: "typescript"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/adf-linking"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/publish-image"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/publish-libs"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/setup"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/deploy-local-acs"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

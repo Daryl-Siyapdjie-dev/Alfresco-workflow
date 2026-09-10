@@ -1,0 +1,9 @@
+name: "Before e2e"
+description: "Before e2e"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check content UP
+      shell: bash
+      run: npm run ci:check-env || exit 1

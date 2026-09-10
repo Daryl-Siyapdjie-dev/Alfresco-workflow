@@ -1,0 +1,57 @@
+name: "Variables setup"
+description: "Variables setup"
+
+inputs:
+  npm_tag:
+    description: 'NPM tag'
+    required: false
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: setup variables
+      shell: bash
+      run: |
+        echo "BUILD_OPTS=--configuration=production,e2e" >> $GITHUB_ENV
+        echo "TEST_OPTS=" >> $GITHUB_ENV
+        echo "E2E_TSCONFIG=tsconfig.e2e.json" >> $GITHUB_ENV
+        echo "GIT_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        echo "HEAD_HASH=HEAD" >> $GITHUB_ENV
+
+    - uses: Alfresco/alfresco-build-tools/.github/actions/get-branch-name@v18.7.0
+    - name: set TAG_NPM
+      shell: bash
+      env:
+        NPM_TAG: ${{ inputs.npm_tag }}
+      run: |
+        if [[ -n "$NPM_TAG" ]]; then
+          TAG_NPM=$NPM_TAG
+        else
+          TAG_NPM="alpha"
+          VERSION_IN_PACKAGE_JSON=$(jq -cr '.version' < package.json)
+
+          echo "version in package.json=${VERSION_IN_PACKAGE_JSON}"
+
+          if [[ $BRANCH_NAME =~ ^master(-patch.*)?$ ]] || [[ $BRANCH_NAME == release/* ]]; then
+              # Pre-release versions
+              if [[ $VERSION_IN_PACKAGE_JSON =~ ^[0-9]*\.[0-9]*\.[0-9]*-A\.[0-9]*$ ]];
+              then
+                  TAG_NPM=next
+              # Stable major versions
+              else
+                  TAG_NPM=latest
+              fi
+          fi
+
+          if [[ $BRANCH_NAME =~ ^develop(-patch.*)?$ ]]; then
+              TAG_NPM=alpha
+          fi
+        fi
+        echo "TAG_NPM=${TAG_NPM}" >> $GITHUB_ENV
+
+    - name: node
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'

@@ -1,0 +1,129 @@
+name: deploy-local-acs
+description: Deploy local ACS for E2E testing
+
+inputs:
+  docker_username:
+    description: 'Docker username'
+    required: true
+  docker_password:
+    description: 'Docker password'
+    required: true
+  quay_username:
+    description: 'Quay username'
+    required: true
+  quay_password:
+    description: 'Quay password'
+    required: true
+  acs_deployment_version:
+    description: 'ACS deployment version (defaults to latest)'
+    required: false
+    default: 'latest'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2
+      with:
+        version: "3.14.3"
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4.2.0
+      with:
+        username: ${{ inputs.docker_username }}
+        password: ${{ inputs.docker_password }}
+
+    - name: Login to Quay.io
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4.2.0
+      with:
+        registry: quay.io
+        username: ${{ inputs.quay_username }}
+        password: ${{ inputs.quay_password }}
+
+    - name: Setup cluster
+      uses: Alfresco/alfresco-build-tools/.github/actions/setup-kind@v18.7.0
+      with:
+        ingress-nginx-ref: controller-v1.8.2
+        ingress-creation-timeout: 180s
+
+    - name: Set nginx ingress config
+      shell: bash
+      run: >-
+        kubectl -n ingress-nginx patch cm ingress-nginx-controller
+        -p '{"data": {"allow-snippet-annotations":"true"}}'
+
+    - name: Create registries auth secret
+      shell: bash
+      run: >-
+        kubectl create secret generic regcred
+        --from-file=.dockerconfigjson=$HOME/.docker/config.json
+        --type=kubernetes.io/dockerconfigjson
+
+    - name: Add dependency chart repos
+      shell: bash
+      run: |
+        helm repo add self https://alfresco.github.io/alfresco-helm-charts/
+        helm repo add elastic https://helm.elastic.co/
+
+    - name: Get latest ACS deployment version
+      id: get-acs-version
+      shell: bash
+      env:
+        ACS_VERSION_INPUT: ${{ inputs.acs_deployment_version }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if [ "$ACS_VERSION_INPUT" = "latest" ]; then
+          max_retries=3
+          retry_count=0
+          latest_tag=""
+
+          while [ $retry_count -lt $max_retries ]; do
+            echo "Attempt $((retry_count + 1)) of $max_retries to fetch latest ACS deployment version..."
+            if [ -n "$GITHUB_TOKEN" ]; then
+              response=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/Alfresco/acs-deployment/releases/latest)
+            else
+              response=$(curl -s https://api.github.com/repos/Alfresco/acs-deployment/releases/latest)
+            fi
+
+            latest_tag=$(echo "$response" | jq -r .tag_name 2>/dev/null || echo "")
+            if [ "$latest_tag" != "null" ] && [ -n "$latest_tag" ]; then
+              echo "Successfully fetched latest ACS deployment version: $latest_tag"
+              echo "version=$latest_tag" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            echo "Warning: Received invalid response (tag_name: $latest_tag)"
+            retry_count=$((retry_count + 1))
+
+            if [ $retry_count -lt $max_retries ]; then
+              sleep_time=$((2 ** retry_count))
+              echo "Retrying in $sleep_time seconds..."
+              sleep $sleep_time
+            fi
+          done
+          
+          echo "Error: Failed to fetch latest ACS deployment version after $max_retries attempts"
+          echo "Last response: $response"
+          exit 1
+        else
+          echo "Using specified ACS deployment version: $ACS_VERSION_INPUT"
+          echo "version=$ACS_VERSION_INPUT" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Checkout acs-deployment ${{ steps.get-acs-version.outputs.version }}
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        repository: Alfresco/acs-deployment
+        ref: ${{ steps.get-acs-version.outputs.version }}
+        path: acs-deployment
+
+    - name: Helm install
+      shell: bash
+      run: >-
+        helm dep build acs-deployment/helm/alfresco-content-services &&
+        helm install acs acs-deployment/helm/alfresco-content-services
+        --set global.search.sharedSecret="$(openssl rand -hex 24)"
+        --values acs-deployment/test/enterprise-integration-test-values.yaml
+        --values .github/acs-deployment-values-override.yaml
+
+    - name: Wait for pods to be ready
+      uses: Alfresco/alfresco-build-tools/.github/actions/kubectl-wait@v18.7.0
