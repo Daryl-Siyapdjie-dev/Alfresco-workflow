@@ -9,3 +9,6 @@ target/
 node_modules/
 dist/
 .claude/
+.env
+WSL2_DOCKER.md
+BRANCHEMENT_API_SIRYF.md

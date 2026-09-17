@@ -39,6 +39,10 @@
                 </list>
             </parameter>
         </constraint>
+        <constraint name="siriyf:moisRange" type="MINMAX">
+            <parameter name="minValue"><value>1</value></parameter>
+            <parameter name="maxValue"><value>12</value></parameter>
+        </constraint>
     </constraints>
 
     <types>
@@ -59,6 +63,23 @@
                     <type>d:text</type>
                     <constraints>
                         <constraint ref="siriyf:typeDocumentList" />
+                    </constraints>
+                </property>
+                <!-- Période d'arrêté saisie par le transmetteur pour les fichiers dont le classeur ne
+                     porte pas de « Date des rapports » (SITU, PRUD, IGEC, FINS, BALG). Renseignées, elles
+                     PRIMENT sur la date lue dans le classeur (cf. IntegrationController.transmission).
+                     Laisser vide pour SIGIMF (période lue dans le classeur). -->
+                <property name="siriyf:annee">
+                    <title>Année d'arrêté (transmission)</title>
+                    <type>d:int</type>
+                    <mandatory>false</mandatory>
+                </property>
+                <property name="siriyf:mois">
+                    <title>Mois d'arrêté (1-12)</title>
+                    <type>d:int</type>
+                    <mandatory>false</mandatory>
+                    <constraints>
+                        <constraint ref="siriyf:moisRange" />
                     </constraints>
                 </property>
             </properties>

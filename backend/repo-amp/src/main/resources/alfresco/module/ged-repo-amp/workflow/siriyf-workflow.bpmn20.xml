@@ -129,6 +129,8 @@
                             if(task.getVariableLocal('wf_reviewOutcome') != null) {
                                 execution.setVariable('wf_reviewOutcome', task.getVariableLocal('wf_reviewOutcome'));
                             }
+                            // Compte du transmetteur ayant approuve : passe en « validateur » (acteur d'audit) a la transmission.
+                            execution.setVariable('siriyfTransmetteurUser', task.getAssignee());
                         </activiti:string>
                     </activiti:field>
                 </activiti:taskListener>
@@ -148,7 +150,7 @@
         </sequenceFlow>
 
         <!-- 4. Tache Automatique de Transmission -->
-        <serviceTask id="serviceTaskTransmission" name="API SIRYF (Mock)" activiti:delegateExpression="${siriyfTransmissionAction}" />
+        <serviceTask id="serviceTaskTransmission" name="Transmission API SIRYF" activiti:class="com.asf.guinee.SiriyfTransmissionAction" />
 
         <sequenceFlow id="flow5" sourceRef="serviceTaskTransmission" targetRef="endEventAccepte" />
 

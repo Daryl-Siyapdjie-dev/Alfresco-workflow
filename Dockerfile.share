@@ -1,0 +1,11 @@
+# Image Share dérivée : Share Community officiel + notre configuration de formulaire.
+# But : rendre visibles dans « Éditer les propriétés » les propriétés du type siriyf:declaration
+# (Type de document, Statut, et surtout Année + Mois d'arrêté saisis par le transmetteur).
+#
+# On COPIE le fichier dans l'image (au lieu de le monter en volume) parce que l'entrypoint de
+# l'image Share fait un `sed -i` sur ce fichier au démarrage (substitution REPO_HOST/REPO_PORT) :
+# un fichier monté en bind ne peut pas être renommé par sed (« Device or resource busy »).
+FROM docker.io/alfresco/alfresco-share:26.1.0
+
+COPY share/share-config-custom.xml \
+     /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml

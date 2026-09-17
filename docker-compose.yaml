@@ -40,6 +40,9 @@ services:
         -Dmessaging.broker.password=admin
         -Ddeployment.method=DOCKER_COMPOSE
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
+        -Dsiriyf.api.url=${SIRIYF_API_URL:-http://integration-api:8080/api/internal/integration/dossier/upload}
+        -Dsiriyf.api.token=${SIRIYF_API_TOKEN:-siryf-dev-token}
+        -Dsiriyf.api.statut=CREATION
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
     healthcheck:
@@ -74,7 +77,10 @@ services:
         condition: service_healthy
 
   share:
-    image: docker.io/alfresco/alfresco-share:26.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile.share
+    image: alfresco-workflow-share:latest
     mem_limit: 1g
     environment:
       CSRF_FILTER_ORIGIN: http://localhost:9090
@@ -189,6 +195,37 @@ services:
       file: commons/base.yaml
       service: control-center
 
+  # Module d'intégration BCRG (notre API) : reçoit le classeur du workflow après l'approbation du
+  # transmetteur (étape ④) et le transmet à SIRYF. Joignable par Alfresco via le réseau interne :
+  # http://integration-api:8080/api/internal/integration/dossier/upload
+  integration-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration-api
+    mem_limit: 768m
+    environment:
+      # Identifiants SIRYF : fournis via un fichier .env à la racine (voir .env.example), jamais versionnés.
+      BCRG_USERNAME: ${BCRG_USERNAME:-}
+      BCRG_PASSWORD: ${BCRG_PASSWORD:-}
+      # Jeton partagé avec Alfresco (en-tête X-Internal-Token) — même valeur que -Dsiriyf.api.token.
+      BCRG_INTERNAL_TOKEN: ${SIRIYF_API_TOKEN:-siryf-dev-token}
+      # Idempotence + piste d'audit persistées (obligatoire hors tests).
+      BCRG_PERSISTANCE_DIR: /data
+      # SSL bundle optionnel (CA privée) ; laisser vide sinon.
+      BCRG_SSL_BUNDLE: ${BCRG_SSL_BUNDLE:-}
+      # La JVM respecte la limite mémoire du conteneur.
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
+    volumes:
+      - integration-api-data:/data
+    ports:
+      - "8081:8080"          # exposition hôte pour diagnostic (actuator, appels manuels) ; facultatif
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 3s
+      retries: 5
+      start_period: 45s
+
   proxy:
     extends:
       file: commons/base.yaml
@@ -198,3 +235,4 @@ volumes:
   postgres-db-data:
   alf-repo-data:
   solr-index-data:
+  integration-api-data:

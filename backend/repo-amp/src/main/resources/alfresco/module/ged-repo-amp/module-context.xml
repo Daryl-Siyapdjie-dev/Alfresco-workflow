@@ -52,12 +52,10 @@
         </property>
     </bean>
 
-    <!-- ArchivageDelegate et PromoteCreditDecisionListener sont references directement par
-         activiti:class dans le BPMN (pas de bean Spring necessaire, cf. leur Javadoc). -->
-
-    <!-- Registration of Java Delegate for SIRYF Mock Transmission -->
-    <bean id="siriyfTransmissionAction" class="com.asf.guinee.SiriyfTransmissionAction">
-        <property name="nodeService" ref="nodeService"/>
-    </bean>
+    <!-- ArchivageDelegate, PromoteCreditDecisionListener ET SiriyfTransmissionAction sont references
+         directement par activiti:class dans les BPMN (pas de bean Spring) : les beans Spring de ce
+         module ne sont PAS visibles depuis les expressions ${...} d'Activiti dans cette configuration
+         Alfresco (delegateExpression -> « Cannot resolve identifier »). Ces delegues recuperent donc
+         leurs services via ContextLoader.getCurrentWebApplicationContext().getBean("ServiceRegistry"). -->
 
 </beans>

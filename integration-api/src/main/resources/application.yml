@@ -1,0 +1,85 @@
+server:
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      # Un classeur SIGIMF rempli pèse quelques Mo : la limite Boot par défaut (1 Mo) rejetterait
+      # les dépôts sur POST /api/internal/integration/sigimf/upload.
+      max-file-size: 25MB
+      max-request-size: 25MB
+
+bcrg:
+  api:
+    base-url: https://syrif.bcrg-guinee.org:8186
+    username: ${BCRG_USERNAME:}
+    password: ${BCRG_PASSWORD:}
+    connect-timeout: 10s
+    read-timeout: 60s
+    token-refresh-margin-seconds: 60
+    # Nom du SSL bundle à appliquer au truststore BCRG. Laisser vide pour utiliser le
+    # truststore JVM par défaut. À activer (ex. "bcrg") quand le certificat serveur du
+    # port :8186 (CA privée) sera fourni, en le déclarant sous spring.ssl.bundle.jks ci-dessous.
+    ssl-bundle: ${BCRG_SSL_BUNDLE:}
+
+  # Déclencheur d'intégration réelle (actif uniquement sous le profil "smoketest").
+  # Voir IntegrationSmokeRunner. Exemple :
+  #   mvn spring-boot:run -Dspring-boot.run.profiles=smoketest \
+  #     -Dspring-boot.run.arguments="--bcrg.smoketest.file=C:/chemin/SIGIMF.xlsx --bcrg.smoketest.sheet=M.III.HS_BILAN"
+  smoketest:
+    file: ${BCRG_SMOKETEST_FILE:}      # chemin du .xlsx à intégrer (vide = ne rien faire)
+    sheet: M.III.HS_BILAN              # nom de la feuille, ou TOUS pour toutes les feuilles couvertes
+    year: 2026                         # période : année
+    month: 8                           # période : mois (dateArrete = dernier jour du mois)
+
+  # Conservation des trois journaux : idempotence, piste d'audit, accusés de réception.
+  # ⚠️ EN PRODUCTION, CE RÉGLAGE EST OBLIGATOIRE. Sans lui, tout vit en mémoire : après un
+  #    redéploiement, le module réenvoie une feuille déjà transmise (SIRYF refuse alors la
+  #    période) et la traçabilité réglementaire (§9) repart de zéro.
+  #    Trois fichiers y sont écrits, lisibles tels quels : transmissions.journal, audit.journal,
+  #    accuses.journal. Ils ne sont jamais réécrits, seulement complétés.
+  persistance:
+    repertoire: ${BCRG_PERSISTANCE_DIR:}   # vide = mémoire (tests et essais)
+
+  # Piste d'audit (Lot 7) : traçabilité réglementaire (§9). Fenêtre de consultation, bornée.
+  audit:
+    max-events: 5000                   # au-delà, les événements les plus anciens sont évincés
+    # Acteur inscrit dans chaque événement (compte de service). Une demande qui précise
+    # « acteur » (workflow SIRYF : le transmetteur dont l'approbation finale a déclenché l'envoi)
+    # l'emporte, le temps de son traitement — cf. audit/AuditContext.
+    acteur: bcrg-integration
+
+  # API interne de déclenchement (Lot 8, ticket 8.2). Par défaut : machine locale uniquement.
+  # Renseigner un jeton pour autoriser un appelant distant (workflow Alfresco) :
+  #   il devra présenter l'en-tête « X-Internal-Token: <jeton> ».
+  # ⚠️ Workflow Alfresco : l'appel vient d'un AUTRE hôte que le module → renseigner « token »
+  #    (et le même dans la règle Alfresco), sinon tout est refusé par InternalApiFilter.
+  internal:
+    token: ${BCRG_INTERNAL_TOKEN:}     # vide = pas de jeton, accès limité à localhost
+    allow-remote: false                # true = pas de restriction d'adresse (réseau déjà cloisonné)
+
+  # Rejeu (Lot 6) : uniquement sur erreurs techniques/transitoires (timeout, API 5xx).
+  retry:
+    max-attempts: 4                    # tentatives totales (1 essai + 3 rejeux)
+    initial-backoff-millis: 500        # délai avant le 1er rejeu
+    multiplier: 2.0                    # 500 ms → 1 s → 2 s …
+    max-backoff-millis: 8000           # plafond du délai
+
+# Truststore optionnel pour l'API BCRG (CA privée). Décommenter et renseigner le keystore
+# une fois le certificat serveur obtenu, puis positionner bcrg.api.ssl-bundle: bcrg.
+# spring:
+#   ssl:
+#     bundle:
+#       jks:
+#         bcrg:
+#           truststore:
+#             location: classpath:certs/bcrg-truststore.jks
+#             password: ${BCRG_TRUSTSTORE_PASSWORD:}
+#             type: JKS
+
+logging:
+  level:
+    com.kimia.bcrg_integration: DEBUG
+    # INFO (et non DEBUG) : le DEBUG du client REST journalise en-têtes (dont Authorization)
+    # et corps (dont le mot de passe du signin) — à éviter (§8/§9 du CDC).
+    org.springframework.web.client.RestClient: INFO

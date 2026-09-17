@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+# Module d'intégration BCRG (Spring Boot 4.1 / Java 17) construit et exécuté comme service Docker,
+# dans la même stack qu'Alfresco. Il reçoit le classeur à transmettre à SIRYF après l'approbation
+# du transmetteur (POST /api/internal/integration/dossier/upload), appelé par le workflow.
+
+# --- Étape build : compile le jar (tests ignorés : pas de réseau/creds au build) ---
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY integration-api/pom.xml ./pom.xml
+COPY integration-api/src ./src
+# Cache ~/.m2 entre builds (gros arbre Spring Boot + openapi-generator).
+RUN --mount=type=cache,target=/root/.m2 mvn -q -B -Dmaven.test.skip=true clean package
+
+# --- Étape finale : JRE 17 ---
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+
+# curl pour le healthcheck actuator.
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+# Import optionnel de racines CA dans le truststore de la JVM. À utiliser si le TLS vers SIRYF
+# (:8186) échoue en conteneur (PKIX) : soit un antivirus/proxy inspecte le HTTPS (déposer SA racine,
+# ex. « Avast Web/Mail Shield Root » exporté en .crt), soit la BCRG signe avec une CA privée.
+# Déposer les certificats dans integration-api/certs/ (*.crt / *.pem / *.cer). Vide = rien à faire.
+COPY integration-api/certs/ /tmp/certs/
+RUN for f in /tmp/certs/*.crt /tmp/certs/*.pem /tmp/certs/*.cer; do \
+      [ -e "$f" ] || continue; \
+      echo "Import CA dans le truststore : $f"; \
+      keytool -importcert -noprompt -cacerts -storepass changeit -alias "ca-$(basename "$f")" -file "$f"; \
+    done; true
+
+COPY --from=build /app/target/bcrg-integration-0.0.1-SNAPSHOT.jar ./app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
