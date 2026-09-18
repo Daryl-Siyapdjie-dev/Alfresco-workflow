@@ -23,6 +23,7 @@ Le build du frontend (Angular) se fait sur l'hôte (comme dans le pipeline offic
 compiler ~1000 paquets npm à l'intérieur de Docker s'est avéré peu fiable (coupures réseau du sandbox de build).
 `docker compose build alfresco`, lui, compile bien le module Maven `backend/repo-amp` à l'intérieur d'un conteneur
 (pas besoin de Java/Maven en local pour ça, seulement si vous voulez compiler/tester en dehors de Docker).
+le build de tous les services se fait par la commande : `docker compose up -d postgres alfresco share proxy integration-api`
 
 ```bash
 # 1. Build du frontend (une fois, puis a chaque modification de frontend/alfresco-content-app)
@@ -30,7 +31,11 @@ cd frontend/alfresco-content-app && npm install && npm run build.release && cd .
 
 # 2. Build des images + demarrage de tous les conteneurs
 docker compose up -d --build
+
+# 3. le build de tous les services + démarrage total de l'app 
+docker compose up -d postgres alfresco share proxy integration-api
 ```
+
 Le premier démarrage/build peut prendre plusieurs minutes : compilation Maven du module repository (gros arbre
 de dépendances Alfresco/Camel, plus rapide une fois le cache `~/.m2` chaud), puis initialisation de PostgreSQL,
 Solr et du dépôt Alfresco.
